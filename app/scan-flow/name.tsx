@@ -3,15 +3,37 @@ import { View, Text, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, T
 import { Colors, Typography } from '../../constants/theme';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
 export default function NameReportScreen() {
-  const [name, setName] = useState('');
+  const { template } = useLocalSearchParams<{ template: string }>();
   const router = useRouter();
 
+  const getSuggestion = () => {
+    switch (template) {
+      case 'sugar':
+        return 'Manipal Diabetes Report Jan 2026';
+      case 'thyroid':
+        return 'SRL Thyroid Profile Feb 2026';
+      case 'lipid':
+        return 'Thyrocare Lipid Panel Jan 2026';
+      case 'xray':
+        return 'Fortis Chest X-Ray Mar 2026';
+      case 'cbc':
+      default:
+        return 'Apollo CBC Blood Report Jan 2026';
+    }
+  };
+
+  const suggestion = getSuggestion();
+  const [name, setName] = useState('');
+
   const handleNext = () => {
-    // Navigate to process screen
-    router.push('/scan-flow/process');
+    // Navigate to process screen, passing the name and the template
+    router.push({
+      pathname: '/scan-flow/process',
+      params: { name: name || suggestion, template }
+    });
   };
 
   return (
@@ -27,14 +49,14 @@ export default function NameReportScreen() {
 
         <View style={styles.form}>
           <Input 
-            placeholder="e.g., Blood Test Dec 2024" 
+            placeholder={`e.g., ${suggestion}`} 
             value={name}
             onChangeText={setName}
             autoFocus
           />
           <View style={styles.suggestionBox}>
-            <Text style={styles.suggestionText}>Suggested: CBC Test Jan 2025 ✨</Text>
-            <TouchableOpacity onPress={() => setName('CBC Test Jan 2025')}>
+            <Text style={styles.suggestionText}>Suggested: {suggestion} ✨</Text>
+            <TouchableOpacity onPress={() => setName(suggestion)}>
               <Text style={styles.useText}>Use</Text>
             </TouchableOpacity>
           </View>
@@ -44,7 +66,6 @@ export default function NameReportScreen() {
           <Button 
             title="Continue" 
             onPress={handleNext} 
-            disabled={name.length === 0}
             style={{ width: '100%' }}
           />
         </View>

@@ -1,0 +1,97 @@
+datasource db {
+  provider = "sqlite"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                      String          @id @default(uuid())
+  email                   String?         @unique
+  passwordHash            String?
+  pinHash                 String          @default("") // Hashed 6-digit PIN (keep for backward compatibility)
+  name                    String?
+  dob                     String?         // Date of Birth (DD/MM/YYYY)
+  gender                  String?
+  height                  String?         // in cm
+  weight                  String?         // in kg
+  bloodType               String?
+  allergies               String          @default("[]") // Stringified JSON array of allergies
+  conditions              String          @default("[]") // Stringified JSON array of conditions
+  pastSurgeries           String          @default("[]") // Stringified JSON array of past surgeries
+  emergencyContactName    String?
+  emergencyContactPhone   String?
+  emergencyContactDetails String          @default("{}") // Stringified JSON object of emergency contact
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+  records                 MedicalRecord[]
+  timelineEvents          TimelineEvent[]
+  vitals                  VitalReading[]
+  accessLogs              AccessLog[]
+}
+
+model MedicalRecord {
+  id                String          @id @default(uuid())
+  userId            String
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reportName        String
+  scanDate          String          // DD/MM/YYYY
+  scanTime          String          // HH:MM AM/PM
+  reportDate        String          // DD/MM/YYYY
+  reportType        String          // Lab Result / Imaging / Prescription / Discharge Summary
+  bodyPart          String
+  detectedCondition String
+  labHospital       String
+  referringDoctor   String
+  patientName       String
+  tags              String          @default("[]") // Stringified JSON array of tags
+  aiProcessed       Boolean         @default(false)
+  cloudSynced       Boolean         @default(true)
+  aiSummary         String          // Locked plain English summary
+  doctorNotes       String          // Editable free text
+  extractedValues   String?         // Stringified JSON list of ExtractedValue objects
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  timelineEvents    TimelineEvent[]
+}
+
+model TimelineEvent {
+  id              String        @id @default(uuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recordId        String
+  record          MedicalRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  date            String        // DD/MM/YYYY
+  type            String
+  reportName      String
+  snippet         String
+  conditionCluster String?
+  createdAt       DateTime      @default(now())
+}
+
+model VitalReading {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type           String   // "Glucose" or "BloodPressure"
+  glucoseValue   Float?   // mg/dL
+  glucoseContext String?  // Fasting / Post-meal / Random / Bedtime
+  bpSystolic     Float?   // mmHg
+  bpDiastolic    Float?   // mmHg
+  bpPulse        Float?   // bpm
+  dateTime       DateTime // logged timestamp
+  notes          String?
+  createdAt      DateTime @default(now())
+}
+
+model AccessLog {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  who        String   // e.g. "Dr. Ramesh Iyer" or "Paramedic"
+  whatReport String   // e.g. "CBC Test Jan 2025" or "Emergency Profile Access"
+  when       DateTime @default(now())
+  how        String   // "QR" or "Link"
+  createdAt  DateTime @default(now())
+}

@@ -1,13 +1,23 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Colors, Typography } from '../../constants/theme';
 import { Button } from '../../components/Button';
 import { useRouter } from 'expo-router';
 import { X, Image as ImageIcon } from 'lucide-react-native';
 
+const TEMPLATES = [
+  { id: 'cbc', name: 'CBC (Blood)', emoji: '🩸' },
+  { id: 'sugar', name: 'Diabetes', emoji: '🍬' },
+  { id: 'bp', name: 'Blood Pressure', emoji: '🩺' },
+  { id: 'thyroid', name: 'Thyroid', emoji: '🦋' },
+  { id: 'lipid', name: 'Lipids', emoji: '🫀' },
+  { id: 'xray', name: 'Chest X-Ray', emoji: '🩻' },
+];
+
 export default function CaptureScreen() {
   const [permission, requestPermission] = useCameraPermissions();
+  const [selectedTemplate, setSelectedTemplate] = useState('cbc');
   const router = useRouter();
   const cameraRef = useRef(null);
 
@@ -27,7 +37,10 @@ export default function CaptureScreen() {
   const handleCapture = async () => {
     // Mock capture delay
     setTimeout(() => {
-      router.push('/scan-flow/name');
+      router.push({
+        pathname: '/scan-flow/name',
+        params: { template: selectedTemplate }
+      });
     }, 500);
   };
 
@@ -52,7 +65,32 @@ export default function CaptureScreen() {
       </CameraView>
 
       <View style={styles.bottomDrawer}>
-        <Text style={styles.instruction}>Align document within frame</Text>
+        <Text style={styles.instruction}>Select sample report type to scan:</Text>
+        
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          style={styles.templateScroll}
+          contentContainerStyle={styles.templateContainer}
+        >
+          {TEMPLATES.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={[
+                styles.templatePill,
+                selectedTemplate === item.id && styles.templatePillActive
+              ]}
+              onPress={() => setSelectedTemplate(item.id)}
+            >
+              <Text style={styles.templateEmoji}>{item.emoji}</Text>
+              <Text style={[
+                styles.templateText,
+                selectedTemplate === item.id && styles.templateTextActive
+              ]}>{item.name}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
         <View style={styles.controls}>
           <TouchableOpacity style={styles.galleryButton}>
             <ImageIcon size={24} color={Colors.surface} />
@@ -60,7 +98,7 @@ export default function CaptureScreen() {
           <TouchableOpacity style={styles.captureButton} onPress={handleCapture}>
             <View style={styles.captureInner} />
           </TouchableOpacity>
-          <View style={{ width: 48 }} /> {/* Spacer to balance gallery button */}
+          <View style={{ width: 48 }} />
         </View>
       </View>
     </View>
@@ -84,11 +122,49 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.dark,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    padding: 32,
-    paddingBottom: 48,
+    padding: 24,
+    paddingBottom: 40,
     alignItems: 'center',
   },
-  instruction: { ...Typography.small, color: Colors.primarySoft, marginBottom: 24 },
+  instruction: { ...Typography.small, color: Colors.primarySoft, marginBottom: 12 },
+  templateScroll: {
+    maxHeight: 48,
+    marginBottom: 20,
+    width: '100%',
+  },
+  templateContainer: {
+    paddingHorizontal: 8,
+    gap: 8,
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  templatePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primaryMuted,
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  templatePillActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.surface,
+  },
+  templateEmoji: {
+    fontSize: 14,
+    marginRight: 6,
+  },
+  templateText: {
+    ...Typography.small,
+    color: Colors.textSecondary,
+    fontFamily: 'DMSans_500Medium',
+  },
+  templateTextActive: {
+    color: Colors.surface,
+    fontFamily: 'DMSans_700Bold',
+  },
   controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' },
   galleryButton: { width: 48, height: 48, borderRadius: 24, backgroundColor: Colors.primaryMuted, justifyContent: 'center', alignItems: 'center' },
   captureButton: { width: 80, height: 80, borderRadius: 40, backgroundColor: Colors.surface, justifyContent: 'center', alignItems: 'center' },

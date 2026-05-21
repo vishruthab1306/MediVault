@@ -39,20 +39,25 @@ export interface TimelineEvent {
   conditionCluster?: string;
 }
 
-export interface UserProfile {
+export interface EmergencyContact {
   name: string;
-  dob: string;
-  gender: string;
-  height: string;
-  weight: string;
-  bloodType: string;
+  phone: string;
+  age?: string;
+  relation?: string;
+  notes?: string;
+}
+
+export interface UserProfile {
+  name: string | null;
+  email: string | null;
+  dob: string | null;
+  gender: string | null;
+  height: string | null;
+  weight: string | null;
+  bloodType: string | null;
   allergies: string[];
   conditions: string[];
-  emergencyContact: {
-    name: string;
-    phone: string;
-  };
-  pin: string | null;
+  emergencyContact: EmergencyContact;
 }
 
 export interface AppState {
@@ -65,6 +70,7 @@ export interface AppState {
   // Actions
   setOffline: (status: boolean) => void;
   setAuthenticated: (status: boolean) => void;
+  loadInitialData: () => Promise<void>;
   setProfile: (profile: Partial<UserProfile>) => void;
   addRecord: (record: MedicalRecord) => void;
   updateRecord: (id: string, updates: Partial<MedicalRecord>) => void;

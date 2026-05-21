@@ -1,101 +1,219 @@
 import { create } from 'zustand';
-import { AppState, MedicalRecord } from '../types';
+import { AppState, MedicalRecord, UserProfile, TimelineEvent } from '../types';
+import { api } from '../services/api';
 
-// Mock Data
-const MOCK_RECORDS: MedicalRecord[] = [
-  {
-    id: '1',
-    reportName: 'CBC Test Jan 2025',
-    scanDate: '15/01/2025',
-    scanTime: '10:30 AM',
-    reportDate: '14/01/2025',
-    reportType: 'Lab Result',
-    bodyPart: 'Blood / Haematology',
-    detectedCondition: 'Routine Checkup',
-    labHospital: 'Apollo Diagnostics',
-    referringDoctor: 'Dr. Priya Nair',
-    patientName: 'John Doe',
-    tags: ['Blood', 'Annual'],
-    aiProcessed: true,
-    cloudSynced: true,
-    aiSummary: 'Your Haemoglobin has dropped slightly from 13.2 to 11.8 since your last test. Other indices are within normal ranges. Consider discussing the slight drop with your doctor.',
-    doctorNotes: 'Doctor advised iron-rich diet.',
-    extractedValues: [
-      { name: 'Haemoglobin', value: '11.8', unit: 'g/dL', status: 'warning', referenceRange: '13.0 - 17.0', historicalDelta: 'Dropped from 13.2' },
-      { name: 'WBC Count', value: '7500', unit: 'cells/cmm', status: 'normal', referenceRange: '4000 - 11000' },
-      { name: 'Platelets', value: '250000', unit: 'cells/cmm', status: 'normal', referenceRange: '150000 - 450000' }
-    ]
-  },
-  {
-    id: '2',
-    reportName: 'Chest X-Ray',
-    scanDate: '10/12/2024',
-    scanTime: '02:15 PM',
-    reportDate: '10/12/2024',
-    reportType: 'Imaging & Scans',
-    bodyPart: 'Chest / Pulmonology',
-    detectedCondition: 'Cough screening',
-    labHospital: 'Manipal Hospitals',
-    referringDoctor: 'Dr. Ramesh Iyer',
-    patientName: 'John Doe',
-    tags: ['X-Ray', 'Chest'],
-    aiProcessed: true,
-    cloudSynced: true,
-    aiSummary: 'No active lung lesions or pleural effusion detected. Normal cardiothymic silhouette.',
-    doctorNotes: '',
-  }
-];
-
-export const useStore = create<AppState>((set) => ({
+export const useStore = create<AppState>((set, get) => ({
   isOffline: false,
   isAuthenticated: false,
-  profile: {
-    name: 'John Doe',
-    dob: '12/05/1990',
-    gender: 'Male',
-    height: '175',
-    weight: '70',
-    bloodType: 'O+',
-    allergies: ['Penicillin', 'Dust'],
-    conditions: ['Mild Hypertension'],
-    emergencyContact: {
-      name: 'Jane Doe',
-      phone: '+91 9876543210'
-    },
-    pin: null
-  },
-  records: MOCK_RECORDS,
-  timeline: [
-    {
-      id: 't1',
-      date: '15/01/2025',
-      recordId: '1',
-      type: 'Lab Result',
-      reportName: 'CBC Test Jan 2025',
-      snippet: 'Haemoglobin slightly low (11.8 g/dL).'
-    },
-    {
-      id: 't2',
-      date: '10/12/2024',
-      recordId: '2',
-      type: 'Imaging & Scans',
-      reportName: 'Chest X-Ray',
-      snippet: 'Normal study. No abnormalities detected.'
-    }
-  ],
+  profile: null,
+  records: [],
+  timeline: [],
 
+  // Set offline status
   setOffline: (status) => set({ isOffline: status }),
-  setAuthenticated: (status) => set({ isAuthenticated: status }),
-  setProfile: (updates) => set((state) => ({ 
-    profile: state.profile ? { ...state.profile, ...updates } : null 
+
+  // Set authenticated status
+  setAuthenticated: (status) => {
+    if (!status) {
+      set({
+        isAuthenticated: false,
+        profile: null,
+        records: [],
+        timeline: [],
+      });
+    } else {
+      set({ isAuthenticated: true });
+    }
+  },
+
+  // Load all initial data from local SQLite database at startup
+  loadInitialData: async () => {
+    try {
+      console.log('[MediVault Store] Fetching initial data from backend SQLite database...');
+      
+      // 1. Fetch user profile
+      const profileData = await api.getProfile();
+      const mappedProfile: UserProfile = {
+        name: profileData.name || null,
+        email: profileData.email || null,
+        dob: profileData.dob || null,
+        gender: profileData.gender || null,
+        height: profileData.height || null,
+        weight: profileData.weight || null,
+        bloodType: profileData.bloodType || null,
+        allergies: profileData.allergies || [],
+        conditions: profileData.conditions || [],
+        emergencyContact: {
+          name: profileData.emergencyContactDetails?.name || profileData.emergencyContactName || '',
+          phone: profileData.emergencyContactDetails?.phone || profileData.emergencyContactPhone || '',
+          age: profileData.emergencyContactDetails?.age || '',
+          relation: profileData.emergencyContactDetails?.relation || '',
+          notes: profileData.emergencyContactDetails?.notes || '',
+        },
+      };
+
+      // 2. Fetch medical records
+      const recordsData = await api.listRecords();
+      const mappedRecords: MedicalRecord[] = recordsData.map((rec: any) => ({
+        id: rec.id,
+        reportName: rec.reportName,
+        scanDate: rec.scanDate,
+        scanTime: rec.scanTime,
+        reportDate: rec.reportDate,
+        reportType: rec.reportType as any,
+        bodyPart: rec.bodyPart,
+        detectedCondition: rec.detectedCondition,
+        labHospital: rec.labHospital,
+        referringDoctor: rec.referringDoctor,
+        patientName: rec.patientName,
+        tags: rec.tags || [],
+        aiProcessed: rec.aiProcessed,
+        cloudSynced: rec.cloudSynced,
+        aiSummary: rec.aiSummary,
+        doctorNotes: rec.doctorNotes,
+        extractedValues: rec.extractedValues || [],
+      }));
+
+      // 3. Fetch chronological timeline
+      const timelineData = await api.getTimeline();
+      const mappedTimeline: TimelineEvent[] = timelineData.map((evt: any) => ({
+        id: evt.id,
+        date: evt.date,
+        recordId: evt.recordId,
+        type: evt.type as any,
+        reportName: evt.reportName,
+        snippet: evt.snippet,
+        conditionCluster: evt.conditionCluster || undefined,
+      }));
+
+      set({
+        profile: mappedProfile,
+        records: mappedRecords,
+        timeline: mappedTimeline,
+      });
+
+      console.log(`[MediVault Store] Successfully loaded profile, ${mappedRecords.length} records, and ${mappedTimeline.length} timeline events.`);
+    } catch (error) {
+      console.error('[MediVault Store] Failed to load initial data:', error);
+    }
+  },
+
+  // Save profile updates to the local database
+  setProfile: async (updates) => {
+    try {
+      const currentProfile = get().profile;
+      if (!currentProfile) return;
+
+      const mergedProfile = { ...currentProfile, ...updates };
+
+      // Map back to backend structure
+      const backendUpdates = {
+        name: mergedProfile.name,
+        email: mergedProfile.email,
+        dob: mergedProfile.dob,
+        gender: mergedProfile.gender,
+        height: mergedProfile.height,
+        weight: mergedProfile.weight,
+        bloodType: mergedProfile.bloodType,
+        allergies: mergedProfile.allergies,
+        conditions: mergedProfile.conditions,
+        emergencyContactName: mergedProfile.emergencyContact?.name,
+        emergencyContactPhone: mergedProfile.emergencyContact?.phone,
+        emergencyContactDetails: {
+          name: mergedProfile.emergencyContact?.name,
+          phone: mergedProfile.emergencyContact?.phone,
+          age: mergedProfile.emergencyContact?.age,
+          relation: mergedProfile.emergencyContact?.relation,
+          notes: mergedProfile.emergencyContact?.notes,
+        }
+      };
+
+      const updatedUser = await api.updateProfile(backendUpdates);
+      
+      const mappedProfile: UserProfile = {
+        name: updatedUser.name || null,
+        email: updatedUser.email || null,
+        dob: updatedUser.dob || null,
+        gender: updatedUser.gender || null,
+        height: updatedUser.height || null,
+        weight: updatedUser.weight || null,
+        bloodType: updatedUser.bloodType || null,
+        allergies: updatedUser.allergies || [],
+        conditions: updatedUser.conditions || [],
+        emergencyContact: {
+          name: updatedUser.emergencyContactDetails?.name || updatedUser.emergencyContactName || '',
+          phone: updatedUser.emergencyContactDetails?.phone || updatedUser.emergencyContactPhone || '',
+          age: updatedUser.emergencyContactDetails?.age || '',
+          relation: updatedUser.emergencyContactDetails?.relation || '',
+          notes: updatedUser.emergencyContactDetails?.notes || '',
+        },
+      };
+
+      set({ profile: mappedProfile });
+      console.log('[MediVault Store] Profile successfully updated in database.');
+    } catch (error) {
+      console.error('[MediVault Store] Failed to update profile:', error);
+    }
+  },
+
+  // Adds a record locally (typically after creation on the backend during processing)
+  addRecord: (record) => set((state) => ({
+    records: [record, ...state.records],
   })),
-  addRecord: (record) => set((state) => ({ 
-    records: [record, ...state.records] 
-  })),
-  updateRecord: (id, updates) => set((state) => ({
-    records: state.records.map(r => r.id === id ? { ...r, ...updates } : r)
-  })),
+
+  // Sync edits to reportName or doctorNotes to SQLite
+  updateRecord: async (id, updates) => {
+    try {
+      // Map update fields to backend
+      const backendUpdates: any = {};
+      if (updates.reportName !== undefined) backendUpdates.reportName = updates.reportName;
+      if (updates.doctorNotes !== undefined) backendUpdates.doctorNotes = updates.doctorNotes;
+
+      const updatedRec = await api.updateRecord(id, backendUpdates);
+      
+      const mappedRecord: MedicalRecord = {
+        id: updatedRec.id,
+        reportName: updatedRec.reportName,
+        scanDate: updatedRec.scanDate,
+        scanTime: updatedRec.scanTime,
+        reportDate: updatedRec.reportDate,
+        reportType: updatedRec.reportType as any,
+        bodyPart: updatedRec.bodyPart,
+        detectedCondition: updatedRec.detectedCondition,
+        labHospital: updatedRec.labHospital,
+        referringDoctor: updatedRec.referringDoctor,
+        patientName: updatedRec.patientName,
+        tags: updatedRec.tags || [],
+        aiProcessed: updatedRec.aiProcessed,
+        cloudSynced: updatedRec.cloudSynced,
+        aiSummary: updatedRec.aiSummary,
+        doctorNotes: updatedRec.doctorNotes,
+        extractedValues: updatedRec.extractedValues || [],
+      };
+
+      set((state) => {
+        // Also update matching timeline events if reportName changed
+        let updatedTimeline = state.timeline;
+        if (updates.reportName !== undefined) {
+          updatedTimeline = state.timeline.map((evt) =>
+            evt.recordId === id ? { ...evt, reportName: updates.reportName! } : evt
+          );
+        }
+
+        return {
+          records: state.records.map((r) => (r.id === id ? mappedRecord : r)),
+          timeline: updatedTimeline,
+        };
+      });
+
+      console.log(`[MediVault Store] Record ${id} successfully updated in database.`);
+    } catch (error) {
+      console.error(`[MediVault Store] Failed to update record ${id}:`, error);
+    }
+  },
+
+  // Adds a timeline event locally
   addTimelineEvent: (event) => set((state) => ({
-    timeline: [event, ...state.timeline]
-  }))
+    timeline: [event, ...state.timeline],
+  })),
 }));

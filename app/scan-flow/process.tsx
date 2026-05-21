@@ -1,11 +1,13 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { View, Text, StyleSheet, Animated, Alert } from 'react-native';
 import { Colors, Typography } from '../../constants/theme';
 import { FileText } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { api } from '../../services/api';
 
 export default function ProcessScreen() {
   const router = useRouter();
+  const { name, template } = useLocalSearchParams<{ name: string; template: string }>();
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -25,13 +27,45 @@ export default function ProcessScreen() {
       ])
     ).start();
 
-    // Mock processing delay
+    // Make the real backend API call to process scanning & AI extraction
+    const processScannedReport = async () => {
+      try {
+        console.log(`[ProcessScreen] Sending report "${name}" (template: ${template}) to backend AI engine...`);
+        
+        const newRecord = await api.createRecord({
+          reportName: name || 'Scanned Medical Report',
+          templateId: template || 'cbc',
+        });
+
+        console.log('[ProcessScreen] AI processing complete. Navigating to results page.');
+        
+        // Pass the created record object to results screen
+        router.replace({
+          pathname: '/scan-flow/results',
+          params: { recordJson: JSON.stringify(newRecord) }
+        });
+      } catch (error: any) {
+        console.error('[ProcessScreen] AI processing failed:', error);
+        Alert.alert(
+          '⚠️ AI Analysis Offline',
+          error.message || 'Could not connect to the medical AI server. The report could not be created.',
+          [
+            {
+              text: 'Go Back',
+              onPress: () => router.back()
+            }
+          ]
+        );
+      }
+    };
+
+    // Trigger after a tiny delay so the gorgeous animation is visible
     const timer = setTimeout(() => {
-      router.push('/scan-flow/results');
-    }, 3000);
+      processScannedReport();
+    }, 1200);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [name]);
 
   return (
     <View style={styles.container}>
