@@ -11,7 +11,40 @@ import { useNavigation } from 'expo-router';
 export default function DashboardScreen() {
   const { profile, theme, toggleTheme } = useStore();
   const colors = useColors();
+  console.log('[DashboardScreen] theme:', theme, 'colors.textPrimary:', colors.textPrimary, 'colors.textSecondary:', colors.textSecondary);
   const navigation = useNavigation();
+
+  const dynamicStyles = {
+    modalTitle: [styles.modalTitle, { color: colors.textPrimary }],
+    inputLabel: [styles.inputLabel, { color: colors.textSecondary }],
+    formInput: [styles.formInput, { 
+      backgroundColor: colors.primaryPale, 
+      borderColor: colors.border, 
+      color: colors.textPrimary 
+    }],
+    disabledInput: [styles.disabledInput, { 
+      backgroundColor: theme === 'dark' ? '#161B2C' : '#ECEFF1', 
+      color: colors.textSecondary, 
+      borderColor: theme === 'dark' ? '#1E293B' : '#CFD8DC' 
+    }],
+    tabSelector: [styles.tabSelector, { backgroundColor: colors.primaryPale }],
+    tabButtonActive: [styles.tabButtonActive, { backgroundColor: colors.surface }],
+    tabButtonText: [styles.tabButtonText, { color: colors.textSecondary }],
+    tabButtonTextActive: [styles.tabButtonTextActive, { color: colors.primary }],
+    contextPill: [styles.contextPill, { 
+      backgroundColor: colors.primaryPale, 
+      borderColor: colors.border 
+    }],
+    contextPillActive: [styles.contextPillActive, { 
+      backgroundColor: colors.primary, 
+      borderColor: colors.primary 
+    }],
+    contextPillText: [styles.contextPillText, { color: colors.textSecondary }],
+    contextPillTextActive: [styles.contextPillTextActive, { color: colors.surface }],
+    closeBtnText: [styles.closeBtnText, { color: colors.textSecondary }],
+    drawerHandle: [styles.drawerHandle, { backgroundColor: colors.primaryMuted }],
+    modalFooter: [styles.modalFooter, { borderTopColor: colors.border }],
+  };
 
   // Vitals state
   const [bloodPressureReadings, setBloodPressureReadings] = useState<any[]>([]);
@@ -794,31 +827,31 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
             onPress={() => setIsModalVisible(false)} 
           />
           <View style={[styles.modalDrawer, { backgroundColor: theme === 'dark' ? colors.surface : '#FDF1F5' }]}>
-            <View style={styles.drawerHandle} />
+            <View style={dynamicStyles.drawerHandle} />
             
             {/* Modal Header */}
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Log Health Vital</Text>
+              <Text style={dynamicStyles.modalTitle}>Log Health Vital</Text>
               <TouchableOpacity onPress={() => setIsModalVisible(false)} style={styles.closeBtn}>
-                <Text style={styles.closeBtnText}>Cancel</Text>
+                <Text style={dynamicStyles.closeBtnText}>Cancel</Text>
               </TouchableOpacity>
             </View>
 
             {/* Segmented Control Selector */}
-            <View style={styles.tabSelector}>
+            <View style={dynamicStyles.tabSelector}>
               <TouchableOpacity 
-                style={[styles.tabButton, activeTab === 'BloodPressure' && styles.tabButtonActive]}
+                style={[styles.tabButton, activeTab === 'BloodPressure' && dynamicStyles.tabButtonActive]}
                 onPress={() => setActiveTab('BloodPressure')}
               >
-                <Text style={[styles.tabButtonText, activeTab === 'BloodPressure' && styles.tabButtonTextActive]}>
+                <Text style={[activeTab === 'BloodPressure' ? dynamicStyles.tabButtonTextActive : dynamicStyles.tabButtonText, { fontFamily: activeTab === 'BloodPressure' ? 'DMSans_600SemiBold' : 'DMSans_500Medium' }]}>
                   🫀 Blood Pressure
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                style={[styles.tabButton, activeTab === 'Glucose' && styles.tabButtonActive]}
+                style={[styles.tabButton, activeTab === 'Glucose' && dynamicStyles.tabButtonActive]}
                 onPress={() => setActiveTab('Glucose')}
               >
-                <Text style={[styles.tabButtonText, activeTab === 'Glucose' && styles.tabButtonTextActive]}>
+                <Text style={[activeTab === 'Glucose' ? dynamicStyles.tabButtonTextActive : dynamicStyles.tabButtonText, { fontFamily: activeTab === 'Glucose' ? 'DMSans_600SemiBold' : 'DMSans_500Medium' }]}>
                   🍬 Blood Glucose
                 </Text>
               </TouchableOpacity>
@@ -829,24 +862,24 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
               <ScrollView style={styles.formContainer} keyboardShouldPersistTaps="handled">
                 <View style={styles.formRow}>
                   <View style={[styles.formCol, { marginRight: 12 }]}>
-                    <Text style={styles.inputLabel}>Systolic (upper) mmHg *</Text>
+                    <Text style={dynamicStyles.inputLabel}>Systolic (upper) mmHg *</Text>
                     <TextInput
-                      style={styles.formInput}
+                      style={dynamicStyles.formInput}
                       keyboardType="numeric"
                       placeholder="e.g. 120"
-                      placeholderTextColor={Colors.textDisabled}
+                      placeholderTextColor={colors.textDisabled}
                       value={bpSystolic}
                       onChangeText={setBpSystolic}
                       maxLength={3}
                     />
                   </View>
                   <View style={styles.formCol}>
-                    <Text style={styles.inputLabel}>Diastolic (lower) mmHg *</Text>
+                    <Text style={dynamicStyles.inputLabel}>Diastolic (lower) mmHg *</Text>
                     <TextInput
-                      style={styles.formInput}
+                      style={dynamicStyles.formInput}
                       keyboardType="numeric"
                       placeholder="e.g. 80"
-                      placeholderTextColor={Colors.textDisabled}
+                      placeholderTextColor={colors.textDisabled}
                       value={bpDiastolic}
                       onChangeText={setBpDiastolic}
                       maxLength={3}
@@ -855,12 +888,12 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
                 </View>
 
                 <View style={styles.formCol}>
-                  <Text style={styles.inputLabel}>Pulse Rate (bpm) - optional</Text>
+                  <Text style={dynamicStyles.inputLabel}>Pulse Rate (bpm) - optional</Text>
                   <TextInput
-                    style={styles.formInput}
+                    style={dynamicStyles.formInput}
                     keyboardType="numeric"
                     placeholder="e.g. 72"
-                    placeholderTextColor={Colors.textDisabled}
+                    placeholderTextColor={colors.textDisabled}
                     value={bpPulse}
                     onChangeText={setBpPulse}
                     maxLength={3}
@@ -868,11 +901,11 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
                 </View>
 
                 <View style={styles.formCol}>
-                  <Text style={styles.inputLabel}>Self Notes / Observation</Text>
+                  <Text style={dynamicStyles.inputLabel}>Self Notes / Observation</Text>
                   <TextInput
-                    style={[styles.formInput, styles.multilineInput]}
+                    style={[dynamicStyles.formInput, styles.multilineInput]}
                     placeholder="How do you feel? e.g. rested, after workout..."
-                    placeholderTextColor={Colors.textDisabled}
+                    placeholderTextColor={colors.textDisabled}
                     multiline={true}
                     numberOfLines={3}
                     value={bpNotes}
@@ -881,9 +914,9 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
                 </View>
 
                 <View style={styles.formCol}>
-                  <Text style={styles.inputLabel}>Recording Time</Text>
+                  <Text style={dynamicStyles.inputLabel}>Recording Time</Text>
                   <TextInput
-                    style={[styles.formInput, styles.disabledInput]}
+                    style={dynamicStyles.disabledInput}
                     editable={false}
                     value={`Now (${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })})`}
                   />
@@ -892,12 +925,12 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
             ) : (
               <ScrollView style={styles.formContainer} keyboardShouldPersistTaps="handled">
                 <View style={styles.formCol}>
-                  <Text style={styles.inputLabel}>Blood Glucose Level (mg/dL) *</Text>
+                  <Text style={dynamicStyles.inputLabel}>Blood Glucose Level (mg/dL) *</Text>
                   <TextInput
-                    style={styles.formInput}
+                    style={dynamicStyles.formInput}
                     keyboardType="numeric"
                     placeholder="e.g. 98"
-                    placeholderTextColor={Colors.textDisabled}
+                    placeholderTextColor={colors.textDisabled}
                     value={glucoseValue}
                     onChangeText={setGlucoseValue}
                     maxLength={3}
@@ -905,15 +938,15 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
                 </View>
 
                 <View style={styles.formCol}>
-                  <Text style={styles.inputLabel}>Testing Context / State *</Text>
+                  <Text style={dynamicStyles.inputLabel}>Testing Context / State *</Text>
                   <View style={styles.contextGrid}>
                     {(['Fasting', 'Post-meal', 'Random', 'Bedtime'] as const).map((ctx) => (
                       <TouchableOpacity
                         key={ctx}
-                        style={[styles.contextPill, glucoseContext === ctx && styles.contextPillActive]}
+                        style={[dynamicStyles.contextPill, glucoseContext === ctx && dynamicStyles.contextPillActive]}
                         onPress={() => setGlucoseContext(ctx)}
                       >
-                        <Text style={[styles.contextPillText, glucoseContext === ctx && styles.contextPillTextActive]}>
+                        <Text style={[dynamicStyles.contextPillText, glucoseContext === ctx && dynamicStyles.contextPillTextActive]}>
                           {ctx}
                         </Text>
                       </TouchableOpacity>
@@ -922,11 +955,11 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
                 </View>
 
                 <View style={styles.formCol}>
-                  <Text style={styles.inputLabel}>Notes / Dietary intake</Text>
+                  <Text style={dynamicStyles.inputLabel}>Notes / Dietary intake</Text>
                   <TextInput
-                    style={[styles.formInput, styles.multilineInput]}
+                    style={[dynamicStyles.formInput, styles.multilineInput]}
                     placeholder="e.g. 2 hours after heavy breakfast"
-                    placeholderTextColor={Colors.textDisabled}
+                    placeholderTextColor={colors.textDisabled}
                     multiline={true}
                     numberOfLines={3}
                     value={glucoseNotes}
@@ -935,9 +968,9 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
                 </View>
 
                 <View style={styles.formCol}>
-                  <Text style={styles.inputLabel}>Recording Time</Text>
+                  <Text style={dynamicStyles.inputLabel}>Recording Time</Text>
                   <TextInput
-                    style={[styles.formInput, styles.disabledInput]}
+                    style={dynamicStyles.disabledInput}
                     editable={false}
                     value={`Now (${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })})`}
                   />
@@ -977,11 +1010,11 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
             {/* Modal Header */}
             <View style={styles.modalHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Heart size={22} color={Colors.primary} />
-                <Text style={styles.modalTitle}>Registered Allergies</Text>
+                <Heart size={22} color={colors.primary} />
+                <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Registered Allergies</Text>
               </View>
               <TouchableOpacity onPress={() => setIsAllergiesModalVisible(false)} style={styles.closeBtn}>
-                <Text style={styles.closeBtnText}>Done</Text>
+                <Text style={[styles.closeBtnText, { color: colors.textSecondary }]}>Done</Text>
               </TouchableOpacity>
             </View>
 
@@ -989,17 +1022,17 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
               {profile?.allergies && profile.allergies.length > 0 ? (
                 <View style={styles.allergiesGrid}>
                   {profile.allergies.map((allergy: string, idx: number) => (
-                    <View key={idx} style={styles.allergyCard}>
-                      <View style={styles.allergyBullet} />
-                      <Text style={styles.allergyText}>{allergy}</Text>
+                    <View key={idx} style={[styles.allergyCard, { backgroundColor: theme === 'dark' ? colors.primaryPale : '#FDF1F5', borderColor: colors.border }]}>
+                      <View style={[styles.allergyBullet, { backgroundColor: colors.primary }]} />
+                      <Text style={[styles.allergyText, { color: colors.textPrimary }]}>{allergy}</Text>
                     </View>
                   ))}
                 </View>
               ) : (
                 <View style={styles.emptyAllergiesState}>
-                  <Heart size={40} color={Colors.textDisabled} style={{ marginBottom: 12 }} />
-                  <Text style={styles.emptyAllergiesText}>No registered allergies found.</Text>
-                  <Text style={styles.emptyAllergiesSubText}>You can update allergies in your profile settings.</Text>
+                  <Heart size={40} color={colors.textDisabled} style={{ marginBottom: 12 }} />
+                  <Text style={[styles.emptyAllergiesText, { color: colors.textPrimary }]}>No registered allergies found.</Text>
+                  <Text style={[styles.emptyAllergiesSubText, { color: colors.textSecondary }]}>You can update allergies in your profile settings.</Text>
                 </View>
               )}
             </ScrollView>
