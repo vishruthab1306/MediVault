@@ -324,7 +324,8 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
 
   // Status Badge Logic
   const getBPStatus = (sys: number, dia: number) => {
-    if (sys < 120 && dia < 80) return { label: 'NORMAL', color: Colors.success, bg: '#EAF6F0' };
+    if (sys < 90 || dia < 60) return { label: 'LOW (HYPO)', color: Colors.info, bg: '#E3F2FD' };
+    if (sys >= 90 && sys < 120 && dia >= 60 && dia < 80) return { label: 'NORMAL', color: Colors.success, bg: '#EAF6F0' };
     if (sys >= 120 && sys < 130 && dia < 80) return { label: 'ELEVATED', color: Colors.warning, bg: '#FEF8EC' };
     if ((sys >= 130 && sys < 140) || (dia >= 80 && dia < 90)) return { label: 'STAGE 1 HTN', color: Colors.primarySoft, bg: '#FDF1F5' };
     return { label: 'STAGE 2 HTN', color: Colors.error, bg: '#FCECEC' };
@@ -332,14 +333,62 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
 
   const getGlucoseStatus = (value: number, context: string) => {
     const isFasting = context === 'Fasting';
+    if (value < 70) return { label: 'CRITICAL LOW', color: Colors.error, bg: '#FCECEC' };
     if (isFasting) {
-      if (value < 100) return { label: 'NORMAL', color: Colors.success, bg: '#EAF6F0' };
+      if (value >= 70 && value < 100) return { label: 'NORMAL', color: Colors.success, bg: '#EAF6F0' };
       if (value >= 100 && value < 126) return { label: 'PRE-DIABETIC', color: Colors.warning, bg: '#FEF8EC' };
       return { label: 'DIABETIC', color: Colors.error, bg: '#FCECEC' };
     } else {
-      if (value < 140) return { label: 'NORMAL', color: Colors.success, bg: '#EAF6F0' };
+      if (value >= 70 && value < 140) return { label: 'NORMAL', color: Colors.success, bg: '#EAF6F0' };
       if (value >= 140 && value < 200) return { label: 'PRE-DIABETIC', color: Colors.warning, bg: '#FEF8EC' };
       return { label: 'DIABETIC', color: Colors.error, bg: '#FCECEC' };
+    }
+  };
+
+  const getBPMeterPercentage = (sys: number, dia: number) => {
+    if (sys < 90 || dia < 60) {
+      const worstRatio = Math.min(sys / 90, dia / 60);
+      return Math.max(10, worstRatio * 25);
+    }
+    if (sys >= 140 || dia >= 90) {
+      const excess = Math.max((sys - 140) / 60, (dia - 90) / 40);
+      return 85 + Math.min(15, excess * 15);
+    }
+    if ((sys >= 130 && sys < 140) || (dia >= 80 && dia < 90)) {
+      const progress = Math.max((sys - 130) / 10, (dia - 80) / 10);
+      return 70 + progress * 15;
+    }
+    if (sys >= 120 && sys < 130 && dia < 80) {
+      const progress = (sys - 120) / 10;
+      return 50 + progress * 20;
+    }
+    const sysProgress = (sys - 90) / 30;
+    const diaProgress = (dia - 60) / 20;
+    const progress = Math.max(sysProgress, diaProgress);
+    return 25 + progress * 25;
+  };
+
+  const getGlucoseMeterPercentage = (value: number, context: string) => {
+    const isFasting = context === 'Fasting';
+    if (value < 70) {
+      return Math.max(10, (value / 70) * 25);
+    }
+    if (isFasting) {
+      if (value >= 70 && value < 100) {
+        return 25 + ((value - 70) / 30) * 25;
+      }
+      if (value >= 100 && value < 126) {
+        return 50 + ((value - 100) / 26) * 25;
+      }
+      return 75 + Math.min(25, ((value - 126) / 150) * 25);
+    } else {
+      if (value >= 70 && value < 140) {
+        return 25 + ((value - 70) / 70) * 25;
+      }
+      if (value >= 140 && value < 200) {
+        return 50 + ((value - 140) / 60) * 25;
+      }
+      return 75 + Math.min(25, ((value - 200) / 150) * 25);
     }
   };
 
@@ -550,7 +599,7 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
                   style={[
                     styles.meterBarFill, 
                     { 
-                      width: `${Math.min(100, Math.max(30, ((latestBP.bpSystolic - 50) / 150) * 100))}%`,
+                      width: `${getBPMeterPercentage(latestBP.bpSystolic, latestBP.bpDiastolic)}%`,
                       backgroundColor: getBPStatus(latestBP.bpSystolic, latestBP.bpDiastolic).color
                     }
                   ]} 
@@ -704,7 +753,7 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
                   style={[
                     styles.meterBarFill, 
                     { 
-                      width: `${Math.min(100, Math.max(25, (latestGlucose.glucoseValue / 250) * 100))}%`,
+                      width: `${getGlucoseMeterPercentage(latestGlucose.glucoseValue, latestGlucose.glucoseContext)}%`,
                       backgroundColor: getGlucoseStatus(latestGlucose.glucoseValue, latestGlucose.glucoseContext).color
                     }
                   ]} 
