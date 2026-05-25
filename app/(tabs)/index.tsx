@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Modal, ActivityIndicator, Alert, TextInput, Share } from 'react-native';
-import { Colors, Shadows, Typography } from '../../constants/theme';
+import { Colors, Shadows, Typography, useColors } from '../../constants/theme';
 import { useStore } from '../../store/useStore';
 import { Card } from '../../components/Card';
 import { Button } from '../../components/Button';
-import { ChevronRight, Activity, Heart, Droplets, Plus, ChevronDown, ChevronUp, Clock, Sparkles, FileText, Calendar, CircleAlert, QrCode, ShieldAlert, ShieldCheck, User, Scale, Ruler, X, Phone, Share2, Check, Lock, Info } from 'lucide-react-native';
+import { ChevronRight, Activity, Heart, Droplets, Plus, ChevronDown, ChevronUp, Clock, Sparkles, FileText, Calendar, CircleAlert, QrCode, ShieldAlert, ShieldCheck, User, Scale, Ruler, X, Phone, Share2, Check, Lock, Info, Sun, Moon } from 'lucide-react-native';
 import { api } from '../../services/api';
 import { useNavigation } from 'expo-router';
 
 export default function DashboardScreen() {
-  const { profile } = useStore();
+  const { profile, theme, toggleTheme } = useStore();
+  const colors = useColors();
   const navigation = useNavigation();
 
   // Vitals state
@@ -24,6 +25,7 @@ export default function DashboardScreen() {
   const [isAllergiesModalVisible, setIsAllergiesModalVisible] = useState(false);
   const [bpHistoryExpanded, setBpHistoryExpanded] = useState(false);
   const [glucoseHistoryExpanded, setGlucoseHistoryExpanded] = useState(false);
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
   // Form states
   const [bpSystolic, setBpSystolic] = useState('');
@@ -376,75 +378,97 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
   const latestGlucose = glucoseReadings[glucoseReadings.length - 1];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <Text style={styles.greeting}>Good morning, {profile?.name?.split(' ')[0] || 'User'}</Text>
-        <Text style={styles.subtitle}>Here's your health summary</Text>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.primaryPale }]}>
+      <View style={[styles.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.greeting, { color: colors.textPrimary }]}>Good morning, {profile?.name?.split(' ')[0] || 'User'}</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Here's your health summary</Text>
+        </View>
+        <TouchableOpacity 
+          onPress={toggleTheme} 
+          activeOpacity={0.7} 
+          style={{
+            width: 44, 
+            height: 44, 
+            borderRadius: 22, 
+            backgroundColor: colors.surface, 
+            justifyContent: 'center', 
+            alignItems: 'center',
+            borderWidth: 1.5,
+            borderColor: colors.border
+          }}
+        >
+          {theme === 'dark' ? (
+            <Sun size={20} color={colors.primary} />
+          ) : (
+            <Moon size={20} color={colors.primary} />
+          )}
+        </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView style={[styles.container, { backgroundColor: colors.primaryPale }]} contentContainerStyle={styles.content}>
         
         {/* Emergency Banner */}
         <TouchableOpacity 
-          style={styles.emergencyBanner} 
+          style={[styles.emergencyBanner, { backgroundColor: colors.primaryMuted, borderColor: colors.border, borderWidth: 1 }]} 
           activeOpacity={0.9}
           onPress={() => setIsEmergencyModalVisible(true)}
         >
           <View style={styles.emergencyLeft}>
-            <Text style={styles.emergencyTitle}>Emergency Medical Card</Text>
-            <Text style={styles.emergencySubtitle}>Tap to share instant profile secure QR code</Text>
+            <Text style={[styles.emergencyTitle, { color: colors.textPrimary }]}>Emergency Medical Card</Text>
+            <Text style={[styles.emergencySubtitle, { color: colors.textSecondary }]}>Tap to share instant profile secure QR code</Text>
           </View>
-          <ChevronRight size={20} color={Colors.primary} />
+          <ChevronRight size={20} color={colors.primary} />
         </TouchableOpacity>
 
         {/* Health Summary Cards */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.summaryScroll} contentContainerStyle={styles.summaryContainer}>
           <Card style={styles.summaryCard}>
-            <View style={styles.iconCircle}>
-              <Droplets size={20} color={Colors.primary} />
+            <View style={[styles.iconCircle, { backgroundColor: colors.primaryMuted }]}>
+              <Droplets size={20} color={colors.primary} />
             </View>
-            <Text style={styles.summaryCardTitle}>Blood Type</Text>
-            <Text style={styles.summaryCardValue}>{profile?.bloodType || '--'}</Text>
+            <Text style={[styles.summaryCardTitle, { color: colors.textSecondary }]}>Blood Type</Text>
+            <Text style={[styles.summaryCardValue, { color: colors.textPrimary }]}>{profile?.bloodType || '--'}</Text>
           </Card>
           
           <Card style={styles.summaryCard}>
-            <View style={styles.iconCircle}>
-              <Activity size={20} color={Colors.primary} />
+            <View style={[styles.iconCircle, { backgroundColor: colors.primaryMuted }]}>
+              <Activity size={20} color={colors.primary} />
             </View>
-            <Text style={styles.summaryCardTitle}>Last BP</Text>
-            <Text style={[styles.summaryCardValue, { fontSize: 18 }]} numberOfLines={1}>
+            <Text style={[styles.summaryCardTitle, { color: colors.textSecondary }]}>Last BP</Text>
+            <Text style={[styles.summaryCardValue, { fontSize: 18, color: colors.textPrimary }]} numberOfLines={1}>
               {latestBP ? `${latestBP.bpSystolic}/${latestBP.bpDiastolic}` : '--/--'}
             </Text>
           </Card>
 
           <Card style={styles.summaryCard}>
-            <View style={styles.iconCircle}>
-              <Sparkles size={20} color={Colors.primary} />
+            <View style={[styles.iconCircle, { backgroundColor: colors.primaryMuted }]}>
+              <Sparkles size={20} color={colors.primary} />
             </View>
-            <Text style={styles.summaryCardTitle}>Last Glucose</Text>
-            <Text style={[styles.summaryCardValue, { fontSize: 18 }]} numberOfLines={1}>
+            <Text style={[styles.summaryCardTitle, { color: colors.textSecondary }]}>Last Glucose</Text>
+            <Text style={[styles.summaryCardValue, { fontSize: 18, color: colors.textPrimary }]} numberOfLines={1}>
               {latestGlucose ? `${latestGlucose.glucoseValue} mg` : '--'}
             </Text>
           </Card>
           
           <TouchableOpacity activeOpacity={0.7} onPress={() => setIsAllergiesModalVisible(true)}>
             <Card style={styles.summaryCard}>
-              <View style={styles.iconCircle}>
-                <Heart size={20} color={Colors.primary} />
+              <View style={[styles.iconCircle, { backgroundColor: colors.primaryMuted }]}>
+                <Heart size={20} color={colors.primary} />
               </View>
-              <Text style={styles.summaryCardTitle}>Allergies</Text>
-              <Text style={styles.summaryCardValue}>{profile?.allergies?.length || 0}</Text>
+              <Text style={[styles.summaryCardTitle, { color: colors.textSecondary }]}>Allergies</Text>
+              <Text style={[styles.summaryCardValue, { color: colors.textPrimary }]}>{profile?.allergies?.length || 0}</Text>
             </Card>
           </TouchableOpacity>
         </ScrollView>
 
-        <Text style={styles.sectionTitle}>Trend Insights</Text>
+        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Trend Insights</Text>
 
         {/* 1. BLOOD PRESSURE CARD */}
         <Card style={styles.trendCard}>
           <View style={styles.trendHeader}>
             <View style={styles.trendHeaderLeft}>
-              <Text style={styles.trendTitle}>🫀 Blood Pressure</Text>
+              <Text style={[styles.trendTitle, { color: colors.textPrimary }]}>🫀 Blood Pressure</Text>
               {latestBP && (
                 <View style={[styles.statusBadge, { backgroundColor: getBPStatus(latestBP.bpSystolic, latestBP.bpDiastolic).bg }]}>
                   <Text style={[styles.statusBadgeText, { color: getBPStatus(latestBP.bpSystolic, latestBP.bpDiastolic).color }]}>
@@ -453,9 +477,9 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
                 </View>
               )}
             </View>
-            <TouchableOpacity onPress={() => handleOpenLog('BloodPressure')} style={styles.logButton}>
-              <Plus size={14} color={Colors.primary} />
-              <Text style={styles.logText}>Log</Text>
+            <TouchableOpacity onPress={() => handleOpenLog('BloodPressure')} style={[styles.logButton, { backgroundColor: colors.primaryMuted }]}>
+              <Plus size={14} color={colors.primary} />
+              <Text style={[styles.logText, { color: colors.primary }]}>Log</Text>
             </TouchableOpacity>
           </View>
 
@@ -463,31 +487,31 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
           {latestBP ? (
             <View style={styles.vitalValuesContainer}>
               <View style={styles.valueBlock}>
-                <Text style={styles.hugeValue}>{latestBP.bpSystolic}</Text>
-                <Text style={styles.valueUnit}>systolic mmHg</Text>
+                <Text style={[styles.hugeValue, { color: colors.textPrimary }]}>{latestBP.bpSystolic}</Text>
+                <Text style={[styles.valueUnit, { color: colors.textSecondary }]}>systolic mmHg</Text>
               </View>
-              <View style={styles.valueSlash}><Text style={styles.slashText}>/</Text></View>
+              <View style={styles.valueSlash}><Text style={[styles.slashText, { color: colors.textSecondary }]}>/</Text></View>
               <View style={styles.valueBlock}>
-                <Text style={styles.hugeValue}>{latestBP.bpDiastolic}</Text>
-                <Text style={styles.valueUnit}>diastolic mmHg</Text>
+                <Text style={[styles.hugeValue, { color: colors.textPrimary }]}>{latestBP.bpDiastolic}</Text>
+                <Text style={[styles.valueUnit, { color: colors.textSecondary }]}>diastolic mmHg</Text>
               </View>
               {latestBP.bpPulse && (
-                <View style={[styles.valueBlock, { marginLeft: 24, borderLeftWidth: 1.5, borderLeftColor: Colors.border, paddingLeft: 24 }]}>
-                  <Text style={[styles.hugeValue, { color: Colors.primarySoft }]}>{latestBP.bpPulse}</Text>
-                  <Text style={styles.valueUnit}>pulse bpm</Text>
+                <View style={[styles.valueBlock, { marginLeft: 24, borderLeftWidth: 1.5, borderLeftColor: colors.border, paddingLeft: 24 }]}>
+                  <Text style={[styles.hugeValue, { color: colors.primarySoft }]}>{latestBP.bpPulse}</Text>
+                  <Text style={[styles.valueUnit, { color: colors.textSecondary }]}>pulse bpm</Text>
                 </View>
               )}
             </View>
           ) : (
-            <View style={styles.emptyVitalBlock}>
-              <Text style={styles.emptyVitalText}>No Blood Pressure logged yet.</Text>
+            <View style={[styles.emptyVitalBlock, { backgroundColor: colors.primaryPale }]}>
+              <Text style={[styles.emptyVitalText, { color: colors.textSecondary }]}>No Blood Pressure logged yet.</Text>
             </View>
           )}
 
           {/* Interactive Trend Bar Meter */}
           {latestBP && (
             <View style={styles.meterContainer}>
-              <Text style={styles.meterLabel}>Cardiovascular Level Range Indicator:</Text>
+              <Text style={[styles.meterLabel, { color: colors.textSecondary }]}>Cardiovascular Level Range Indicator:</Text>
               <View style={styles.meterBarBackground}>
                 <View 
                   style={[
@@ -500,52 +524,102 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
                 />
               </View>
               <View style={styles.meterTicks}>
-                <Text style={styles.tickText}>Low</Text>
-                <Text style={styles.tickText}>Normal</Text>
-                <Text style={styles.tickText}>Elevated</Text>
-                <Text style={styles.tickText}>High</Text>
+                <Text style={[styles.tickText, { color: colors.textSecondary }]}>Low</Text>
+                <Text style={[styles.tickText, { color: colors.textSecondary }]}>Normal</Text>
+                <Text style={[styles.tickText, { color: colors.textSecondary }]}>Elevated</Text>
+                <Text style={[styles.tickText, { color: colors.textSecondary }]}>High</Text>
               </View>
             </View>
           )}
 
           {/* One-Line AI Trend Insight */}
-          <View style={styles.aiInsightRow}>
-            <Sparkles size={16} color={Colors.primary} />
-            <Text style={styles.aiInsightText}>{getBPAITrendSummary(bloodPressureReadings)}</Text>
+          <View style={[styles.aiInsightRow, { backgroundColor: theme === 'dark' ? colors.primaryPale : '#FDF1F5' }]}>
+            <Sparkles size={16} color={colors.primary} />
+            <Text style={[styles.aiInsightText, { color: colors.textPrimary }]}>{getBPAITrendSummary(bloodPressureReadings)}</Text>
           </View>
 
           {/* Chronological History Log */}
           {bloodPressureReadings.length > 0 && (
-            <View style={styles.historySection}>
+            <View style={[styles.historySection, { borderTopColor: colors.border }]}>
               <TouchableOpacity 
                 style={styles.historyToggle} 
                 onPress={() => setBpHistoryExpanded(!bpHistoryExpanded)}
                 activeOpacity={0.7}
               >
-                <Text style={styles.historyToggleText}>
+                <Text style={[styles.historyToggleText, { color: colors.textSecondary }]}>
                   {bpHistoryExpanded ? 'Hide History Logs' : `Show History Logs (${bloodPressureReadings.length})`}
                 </Text>
-                {bpHistoryExpanded ? <ChevronUp size={16} color={Colors.textSecondary} /> : <ChevronDown size={16} color={Colors.textSecondary} />}
+                {bpHistoryExpanded ? <ChevronUp size={16} color={colors.textSecondary} /> : <ChevronDown size={16} color={colors.textSecondary} />}
               </TouchableOpacity>
 
               {bpHistoryExpanded && (
                 <View style={styles.historyList}>
-                  {bloodPressureReadings.slice().reverse().map((item) => (
-                    <View key={item.id} style={styles.historyItem}>
-                      <View style={styles.historyLeft}>
-                        <Clock size={14} color={Colors.textSecondary} style={{ marginRight: 6 }} />
-                        <Text style={styles.historyDate}>{formatReadingDate(item.dateTime)}</Text>
-                      </View>
-                      <View style={styles.historyRight}>
-                        <Text style={styles.historyValue}>
-                          {item.bpSystolic}/{item.bpDiastolic} <Text style={{ fontSize: 10, color: Colors.textSecondary }}>mmHg</Text>
-                        </Text>
-                        <Text style={styles.historySource} numberOfLines={1}>
-                          {item.notes && item.notes.includes('Auto-extracted') ? '🩺 Auto' : '👤 Manual'}
-                        </Text>
-                      </View>
-                    </View>
-                  ))}
+                  {bloodPressureReadings.slice().reverse().map((item) => {
+                    const bpStatus = getBPStatus(item.bpSystolic, item.bpDiastolic);
+                    const isExpanded = expandedItemId === item.id;
+                    return (
+                      <TouchableOpacity 
+                        key={item.id} 
+                        activeOpacity={0.8}
+                        onPress={() => setExpandedItemId(isExpanded ? null : item.id)}
+                        style={[styles.historyItem, { flexDirection: 'column', alignItems: 'stretch', borderBottomColor: colors.border }]}
+                      >
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                          <View style={styles.historyLeft}>
+                            <Clock size={14} color={colors.textSecondary} style={{ marginRight: 6 }} />
+                            <Text style={[styles.historyDate, { color: colors.textPrimary }]}>{formatReadingDate(item.dateTime)}</Text>
+                          </View>
+                          <View style={styles.historyRight}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: bpStatus.color }} />
+                              <Text style={[styles.historyValue, { color: colors.textPrimary }]}>
+                                {item.bpSystolic}/{item.bpDiastolic} <Text style={{ fontSize: 10, color: colors.textSecondary }}>mmHg</Text>
+                              </Text>
+                            </View>
+                            <Text style={[styles.historySource, { color: colors.textSecondary }]} numberOfLines={1}>
+                              {item.notes && item.notes.includes('Auto-extracted') ? '🩺 Auto' : '👤 Manual'}
+                            </Text>
+                          </View>
+                        </View>
+
+                        {isExpanded && (
+                          <View style={{ 
+                            backgroundColor: colors.primaryMuted, 
+                            borderRadius: 10, 
+                            padding: 12, 
+                            marginTop: 10, 
+                            borderWidth: 1.5, 
+                            borderColor: colors.border,
+                            width: '100%' 
+                          }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, gap: 12 }}>
+                              <Text style={{ fontSize: 11, fontFamily: 'DMSans_500Medium', color: colors.textSecondary, width: '40%' }}>LEVEL INDICATOR</Text>
+                              <Text style={{ fontSize: 11, fontFamily: 'DMSans_700Bold', color: bpStatus.color, width: '55%', textAlign: 'right' }}>{bpStatus.label}</Text>
+                            </View>
+                            {item.bpPulse && (
+                              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, gap: 12 }}>
+                                <Text style={{ fontSize: 11, fontFamily: 'DMSans_500Medium', color: colors.textSecondary, width: '40%' }}>HEART RATE (PULSE)</Text>
+                                <Text style={{ fontSize: 11, fontFamily: 'DMSans_700Bold', color: colors.textPrimary, width: '55%', textAlign: 'right' }}>{item.bpPulse} bpm</Text>
+                              </View>
+                            )}
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8, gap: 12 }}>
+                              <Text style={{ fontSize: 11, fontFamily: 'DMSans_500Medium', color: colors.textSecondary, width: '40%' }}>CLINICAL NOTE</Text>
+                              <Text style={{ fontSize: 12, color: colors.textPrimary, fontFamily: 'DMSans_400Regular', width: '55%', textAlign: 'right' }}>{item.notes || 'No notes added.'}</Text>
+                            </View>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                              <Text style={{ fontSize: 11, fontFamily: 'DMSans_500Medium', color: colors.textSecondary, width: '40%' }}>TRIAGE ADVICE</Text>
+                              <Text style={{ fontSize: 12, color: bpStatus.color, fontFamily: 'DMSans_500Medium', width: '55%', textAlign: 'right', lineHeight: 16 }}>
+                                {bpStatus.label === 'NORMAL' ? 'Optimal limits. Maintain a balanced diet.' :
+                                 bpStatus.label === 'ELEVATED' ? 'Warning: Pre-hypertension. Limit sodium & stress.' :
+                                 bpStatus.label === 'STAGE 1 HTN' ? 'Stage 1 Hypertension. Focus on tracking & check with doctor.' :
+                                 'CRITICAL HIGH! Rest immediately & seek emergency medical care.'}
+                              </Text>
+                            </View>
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               )}
             </View>
@@ -556,7 +630,7 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
         <Card style={styles.trendCard}>
           <View style={styles.trendHeader}>
             <View style={styles.trendHeaderLeft}>
-              <Text style={styles.trendTitle}>🍬 Blood Glucose</Text>
+              <Text style={[styles.trendTitle, { color: colors.textPrimary }]}>🍬 Blood Glucose</Text>
               {latestGlucose && (
                 <View style={[styles.statusBadge, { backgroundColor: getGlucoseStatus(latestGlucose.glucoseValue, latestGlucose.glucoseContext).bg }]}>
                   <Text style={[styles.statusBadgeText, { color: getGlucoseStatus(latestGlucose.glucoseValue, latestGlucose.glucoseContext).color }]}>
@@ -565,9 +639,9 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
                 </View>
               )}
             </View>
-            <TouchableOpacity onPress={() => handleOpenLog('Glucose')} style={styles.logButton}>
-              <Plus size={14} color={Colors.primary} />
-              <Text style={styles.logText}>Log</Text>
+            <TouchableOpacity onPress={() => handleOpenLog('Glucose')} style={[styles.logButton, { backgroundColor: colors.primaryMuted }]}>
+              <Plus size={14} color={colors.primary} />
+              <Text style={[styles.logText, { color: colors.primary }]}>Log</Text>
             </TouchableOpacity>
           </View>
 
@@ -575,23 +649,23 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
           {latestGlucose ? (
             <View style={styles.glucoseValueRow}>
               <View style={styles.glucoseMainVal}>
-                <Text style={styles.hugeGlucose}>{latestGlucose.glucoseValue}</Text>
-                <Text style={styles.glucoseUnit}>mg/dL</Text>
+                <Text style={[styles.hugeGlucose, { color: colors.textPrimary }]}>{latestGlucose.glucoseValue}</Text>
+                <Text style={[styles.glucoseUnit, { color: colors.textSecondary }]}>mg/dL</Text>
               </View>
-              <View style={styles.glucoseContextTag}>
-                <Text style={styles.glucoseContextText}>{latestGlucose.glucoseContext.toUpperCase()}</Text>
+              <View style={[styles.glucoseContextTag, { backgroundColor: colors.primaryMuted }]}>
+                <Text style={[styles.glucoseContextText, { color: colors.primary }]}>{latestGlucose.glucoseContext.toUpperCase()}</Text>
               </View>
             </View>
           ) : (
-            <View style={styles.emptyVitalBlock}>
-              <Text style={styles.emptyVitalText}>No Blood Glucose logged yet.</Text>
+            <View style={[styles.emptyVitalBlock, { backgroundColor: colors.primaryPale }]}>
+              <Text style={[styles.emptyVitalText, { color: colors.textSecondary }]}>No Blood Glucose logged yet.</Text>
             </View>
           )}
 
           {/* Dynamic Glucose Meter */}
           {latestGlucose && (
             <View style={styles.meterContainer}>
-              <Text style={styles.meterLabel}>Fasting / Post-Meal indicator:</Text>
+              <Text style={[styles.meterLabel, { color: colors.textSecondary }]}>Fasting / Post-Meal indicator:</Text>
               <View style={styles.meterBarBackground}>
                 <View 
                   style={[
@@ -604,53 +678,100 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
                 />
               </View>
               <View style={styles.meterTicks}>
-                <Text style={styles.tickText}>Hypo</Text>
-                <Text style={styles.tickText}>Normal</Text>
-                <Text style={styles.tickText}>Pre-Diabetic</Text>
-                <Text style={styles.tickText}>Hyper</Text>
+                <Text style={[styles.tickText, { color: colors.textSecondary }]}>Hypo</Text>
+                <Text style={[styles.tickText, { color: colors.textSecondary }]}>Normal</Text>
+                <Text style={[styles.tickText, { color: colors.textSecondary }]}>Pre-Diabetic</Text>
+                <Text style={[styles.tickText, { color: colors.textSecondary }]}>Hyper</Text>
               </View>
             </View>
           )}
 
           {/* AI Glucose Insight */}
-          <View style={styles.aiInsightRow}>
-            <Sparkles size={16} color={Colors.primary} />
-            <Text style={styles.aiInsightText}>{getGlucoseAITrendSummary(glucoseReadings)}</Text>
+          <View style={[styles.aiInsightRow, { backgroundColor: theme === 'dark' ? colors.primaryPale : '#FDF1F5' }]}>
+            <Sparkles size={16} color={colors.primary} />
+            <Text style={[styles.aiInsightText, { color: colors.textPrimary }]}>{getGlucoseAITrendSummary(glucoseReadings)}</Text>
           </View>
 
           {/* Glucose Chronological History */}
           {glucoseReadings.length > 0 && (
-            <View style={styles.historySection}>
+            <View style={[styles.historySection, { borderTopColor: colors.border }]}>
               <TouchableOpacity 
                 style={styles.historyToggle} 
                 onPress={() => setGlucoseHistoryExpanded(!glucoseHistoryExpanded)}
                 activeOpacity={0.7}
               >
-                <Text style={styles.historyToggleText}>
+                <Text style={[styles.historyToggleText, { color: colors.textSecondary }]}>
                   {glucoseHistoryExpanded ? 'Hide History Logs' : `Show History Logs (${glucoseReadings.length})`}
                 </Text>
-                {glucoseHistoryExpanded ? <ChevronUp size={16} color={Colors.textSecondary} /> : <ChevronDown size={16} color={Colors.textSecondary} />}
+                {glucoseHistoryExpanded ? <ChevronUp size={16} color={colors.textSecondary} /> : <ChevronDown size={16} color={colors.textSecondary} />}
               </TouchableOpacity>
 
               {glucoseHistoryExpanded && (
                 <View style={styles.historyList}>
-                  {glucoseReadings.slice().reverse().map((item) => (
-                    <View key={item.id} style={styles.historyItem}>
-                      <View style={styles.historyLeft}>
-                        <Clock size={14} color={Colors.textSecondary} style={{ marginRight: 6 }} />
-                        <Text style={styles.historyDate}>{formatReadingDate(item.dateTime)}</Text>
-                      </View>
-                      <View style={styles.historyRight}>
-                        <Text style={styles.historyValue}>
-                          {item.glucoseValue} <Text style={{ fontSize: 10, color: Colors.textSecondary }}>mg/dL</Text>
-                          <Text style={{ fontSize: 10, fontFamily: 'DMSans_500Medium', color: Colors.primary }}> ({item.glucoseContext})</Text>
-                        </Text>
-                        <Text style={styles.historySource} numberOfLines={1}>
-                          {item.notes && item.notes.includes('Auto-extracted') ? '🩺 Auto' : '👤 Manual'}
-                        </Text>
-                      </View>
-                    </View>
-                  ))}
+                  {glucoseReadings.slice().reverse().map((item) => {
+                    const sugarStatus = getGlucoseStatus(item.glucoseValue, item.glucoseContext);
+                    const isExpanded = expandedItemId === item.id;
+                    return (
+                      <TouchableOpacity 
+                        key={item.id} 
+                        activeOpacity={0.8}
+                        onPress={() => setExpandedItemId(isExpanded ? null : item.id)}
+                        style={[styles.historyItem, { flexDirection: 'column', alignItems: 'stretch', borderBottomColor: colors.border }]}
+                      >
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                          <View style={styles.historyLeft}>
+                            <Clock size={14} color={colors.textSecondary} style={{ marginRight: 6 }} />
+                            <Text style={[styles.historyDate, { color: colors.textPrimary }]}>{formatReadingDate(item.dateTime)}</Text>
+                          </View>
+                          <View style={styles.historyRight}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: sugarStatus.color }} />
+                              <Text style={[styles.historyValue, { color: colors.textPrimary }]}>
+                                {item.glucoseValue} <Text style={{ fontSize: 10, color: colors.textSecondary }}>mg/dL</Text>
+                                <Text style={{ fontSize: 10, fontFamily: 'DMSans_500Medium', color: colors.primary }}> ({item.glucoseContext})</Text>
+                              </Text>
+                            </View>
+                            <Text style={[styles.historySource, { color: colors.textSecondary }]} numberOfLines={1}>
+                              {item.notes && item.notes.includes('Auto-extracted') ? '🩺 Auto' : '👤 Manual'}
+                            </Text>
+                          </View>
+                        </View>
+
+                        {isExpanded && (
+                          <View style={{ 
+                            backgroundColor: colors.primaryMuted, 
+                            borderRadius: 10, 
+                            padding: 12, 
+                            marginTop: 10, 
+                            borderWidth: 1.5, 
+                            borderColor: colors.border,
+                            width: '100%' 
+                          }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, gap: 12 }}>
+                              <Text style={{ fontSize: 11, fontFamily: 'DMSans_500Medium', color: colors.textSecondary, width: '40%' }}>LEVEL INDICATOR</Text>
+                              <Text style={{ fontSize: 11, fontFamily: 'DMSans_700Bold', color: sugarStatus.color, width: '55%', textAlign: 'right' }}>{sugarStatus.label}</Text>
+                            </View>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, gap: 12 }}>
+                              <Text style={{ fontSize: 11, fontFamily: 'DMSans_500Medium', color: colors.textSecondary, width: '40%' }}>MEASUREMENT STATE</Text>
+                              <Text style={{ fontSize: 11, fontFamily: 'DMSans_700Bold', color: colors.textPrimary, width: '55%', textAlign: 'right' }}>{item.glucoseContext}</Text>
+                            </View>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8, gap: 12 }}>
+                              <Text style={{ fontSize: 11, fontFamily: 'DMSans_500Medium', color: colors.textSecondary, width: '40%' }}>CLINICAL NOTE</Text>
+                              <Text style={{ fontSize: 12, color: colors.textPrimary, fontFamily: 'DMSans_400Regular', width: '55%', textAlign: 'right' }}>{item.notes || 'No notes added.'}</Text>
+                            </View>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                              <Text style={{ fontSize: 11, fontFamily: 'DMSans_500Medium', color: colors.textSecondary, width: '40%' }}>TRIAGE ADVICE</Text>
+                              <Text style={{ fontSize: 12, color: sugarStatus.color, fontFamily: 'DMSans_500Medium', width: '55%', textAlign: 'right', lineHeight: 16 }}>
+                                {sugarStatus.label === 'NORMAL' ? 'Glycemic metrics fully stable & well-regulated.' :
+                                 sugarStatus.label === 'PRE-DIABETIC' ? 'Warning: Pre-diabetic levels. Reduce carbs & monitor.' :
+                                 'CRITICAL SUGARS! Elevated range. Review meds & consult doctor.'}
+                              </Text>
+                            </View>
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               )}
             </View>
@@ -672,7 +793,7 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
             activeOpacity={1} 
             onPress={() => setIsModalVisible(false)} 
           />
-          <View style={styles.modalDrawer}>
+          <View style={[styles.modalDrawer, { backgroundColor: theme === 'dark' ? colors.surface : '#FDF1F5' }]}>
             <View style={styles.drawerHandle} />
             
             {/* Modal Header */}
@@ -850,7 +971,7 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
             activeOpacity={1} 
             onPress={() => setIsAllergiesModalVisible(false)} 
           />
-          <View style={[styles.modalDrawer, { maxHeight: '65%' }]}>
+          <View style={[styles.modalDrawer, { maxHeight: '65%', backgroundColor: theme === 'dark' ? colors.surface : '#FDF1F5' }]}>
             <View style={styles.drawerHandle} />
             
             {/* Modal Header */}
@@ -1278,7 +1399,7 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
             activeOpacity={1} 
             onPress={() => setIsEmergencyModalVisible(false)} 
           />
-          <View style={[styles.modalDrawer, { maxHeight: '90%' }]}>
+          <View style={[styles.modalDrawer, { maxHeight: '90%', backgroundColor: theme === 'dark' ? colors.surface : '#FDF1F5' }]}>
             <View style={styles.drawerHandle} />
             
             {/* Red Pulse Beacon Header */}
