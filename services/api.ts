@@ -87,6 +87,7 @@ export const api = {
     tags?: string[];
     doctorNotes?: string;
     templateId?: string;
+    reportText?: string;
   }) => {
     return request<any>('/api/records', {
       method: 'POST',
@@ -104,6 +105,12 @@ export const api = {
   deleteRecord: async (id: string) => {
     return request<{ success: boolean; message: string }>(`/api/records/${id}`, {
       method: 'DELETE',
+    });
+  },
+
+  confirmRecord: async (id: string) => {
+    return request<{ success: boolean; message: string }>(`/api/records/${id}/confirm`, {
+      method: 'POST',
     });
   },
 

@@ -7,6 +7,8 @@ import { useRouter } from 'expo-router';
 import { X, Image as ImageIcon } from 'lucide-react-native';
 
 const TEMPLATES = [
+  { id: 'evergreen', name: 'Evergreen Wellness', emoji: '🏥' },
+  { id: 'general', name: 'General Check-up', emoji: '📋' },
   { id: 'cbc', name: 'CBC (Blood)', emoji: '🩸' },
   { id: 'sugar', name: 'Diabetes', emoji: '🍬' },
   { id: 'bp', name: 'Blood Pressure', emoji: '🩺' },
@@ -17,7 +19,7 @@ const TEMPLATES = [
 
 export default function CaptureScreen() {
   const [permission, requestPermission] = useCameraPermissions();
-  const [selectedTemplate, setSelectedTemplate] = useState('cbc');
+  const [selectedTemplate, setSelectedTemplate] = useState('evergreen');
   const router = useRouter();
   const cameraRef = useRef(null);
 
