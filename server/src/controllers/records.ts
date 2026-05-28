@@ -70,7 +70,9 @@ export const createRecord = async (req: Request, res: Response, next: NextFuncti
       tags,
       doctorNotes,
       templateId,
-      reportText
+      reportText,
+      imageBase64,
+      customFileUri
     } = req.body;
 
     if (!reportName) {
@@ -117,16 +119,12 @@ export const createRecord = async (req: Request, res: Response, next: NextFuncti
     // Call live Gemini AI if client is available
     if (genAI) {
       try {
-        console.log('[MediVault Backend] Invoking Google Gemini 1.5 Flash Model for OCR Analysis...');
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        console.log('[MediVault Backend] Invoking Google Gemini AI Model with model fallback chain...');
 
         const systemPrompt = `You are a high-fidelity Medical Report AI Parser. 
-Your task is to analyze the unstructured OCR transcribed text of a medical report and extract clinical insights into a structured JSON format.
+Your task is to analyze the unstructured OCR transcribed text (or the photographed medical report image provided) and extract clinical insights into a structured JSON format matching the schema below.
 
-Medical Report Text:
-"""
-${srcText}
-"""
+If an image is attached, please perform high-fidelity visual OCR on the image to read and parse the text!
 
 You MUST return a JSON object matching this TypeScript interface exactly. Do NOT wrap your response in markdown code blocks like \`\`\`json. Return the raw JSON string directly.
 
@@ -163,7 +161,50 @@ interface MedicalReportAnalysis {
   };
 }`;
 
-        const result = await model.generateContent(systemPrompt);
+        const modelsToTry = [
+          'gemini-2.0-flash',
+          'gemini-2.0-flash-exp',
+          'gemini-1.5-flash',
+          'gemini-1.5-flash-latest',
+          'gemini-2.5-flash',
+          'gemini-1.5-pro',
+          'gemini-pro'
+        ];
+
+        let result: any = null;
+        let lastError: any = null;
+
+        // Structure the image generative part if base64 data is present
+        const imagePart = imageBase64 ? {
+          inlineData: {
+            data: imageBase64,
+            mimeType: 'image/jpeg'
+          }
+        } : null;
+
+        const promptText = imageBase64 ? 
+          `${systemPrompt}\n\nPlease read and parse the clinical values directly from the attached medical report image.` : 
+          `${systemPrompt}\n\nMedical Report Text:\n"""\n${srcText}\n"""`;
+
+        const promptParts = imagePart ? [promptText, imagePart] : [promptText];
+
+        for (const modelName of modelsToTry) {
+          try {
+            console.log(`[MediVault Backend] Attempting Gemini model: ${modelName} (Multimodal: ${!!imagePart})`);
+            const model = genAI.getGenerativeModel({ model: modelName });
+            result = await model.generateContent(promptParts);
+            console.log(`[MediVault Backend] Successfully fetched response using model: ${modelName}`);
+            break;
+          } catch (err: any) {
+            console.warn(`[MediVault Backend] Model ${modelName} failed/not-supported:`, err.message);
+            lastError = err;
+          }
+        }
+
+        if (!result) {
+          throw lastError || new Error('All Gemini model fallbacks failed.');
+        }
+
         const responseText = result.response.text().trim();
 
         // Strip markdown code blocks if Gemini returns them anyway
@@ -293,9 +334,10 @@ interface MedicalReportAnalysis {
       nameMismatch = !hasOverlap;
     }
 
-    // Determine fileUri based on templates
+    // Determine fileUri based on templates or actual captured photo URI
     let fileUri = 'general';
-    if (isEvergreen) fileUri = 'evergreen';
+    if (customFileUri) fileUri = customFileUri;
+    else if (isEvergreen) fileUri = 'evergreen';
     else if (isGeneral) fileUri = 'general';
     else if (isCBC) fileUri = 'cbc';
     else if (isSugar) fileUri = 'sugar';

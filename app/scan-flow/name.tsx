@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView, TextInput, TouchableOpacity, Image } from 'react-native';
 import { Colors, Typography, useColors } from '../../constants/theme';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useStore } from '../../store/useStore';
+import { Eye } from 'lucide-react-native';
 
 const DEFAULT_TRANSCRIPTIONS: Record<string, string> = {
   evergreen: `Evergreen Wellness Hospital
@@ -55,15 +56,18 @@ Dr. A. Smith        2025-06-22`,
 
   cbc: `Apollo Diagnostics
 Complete Blood Count (CBC) Report
-Patient: John Doe    Age: 42    Gender: Male
-Date: 12/01/2026     Dr. Priya Nair
+Patient Name: Ms. VISHRUTHA BANGLE   Age/Gender: 19 Y 2 M 12 D / F
+Reported Date: 27/Mar/2025   Ref Doctor: Dr. Bhavya H S
+Lab: Apollo Diagnostics
 
-HAEMATOLOGY RESULTS:
-Haemoglobin: 11.8 g/dL   (Ref: 13.0 - 17.0 g/dL)  [WARNING - LOW]
-WBC Count: 7500 /cmm     (Ref: 4000 - 11000 /cmm)
-Platelets: 250000 /cmm   (Ref: 150000 - 450000 /cmm)
+DEPARTMENT OF HAEMATOLOGY
+Test Name: COMPLETE BLOOD COUNT (CBC), WHOLE BLOOD EDTA
+HAEMOGLOBIN: 14.2 g/dL   (Bio. Ref. Interval: 12-15)
+RBC COUNT: 5.3 Million/cu.mm   (Bio. Ref. Interval: 3.8-4.8)  [WARNING - HIGH]
+TOTAL LEUCOCYTE COUNT (TLC): 7,830 cells/cu.mm   (Bio. Ref. Interval: 4000-10000)
+PLATELET COUNT: 326000 cells/cu.mm   (Bio. Ref. Interval: 150000-410000)
 
-Clinical Note: Mild microcytic anemia suspected. Dr. Priya Nair.`,
+Clinical Note: Normal Haemoglobin. Dr. Bhavya H S.`,
 
   sugar: `Manipal Hospitals
 Blood Glucose Lab Results
@@ -125,12 +129,20 @@ Clinical Note: Healthy normal lungs. Dr. Vikram Seth.`
 };
 
 export default function NameReportScreen() {
-  const { template } = useLocalSearchParams<{ template: string }>();
+  const { template, capturedImageUri, capturedImageBase64 } = useLocalSearchParams<{ 
+    template: string;
+    capturedImageUri?: string;
+    capturedImageBase64?: string;
+  }>();
   const router = useRouter();
   const colors = useColors();
   const theme = useStore((state) => state.theme);
 
   const getSuggestion = () => {
+    if (capturedImageUri) {
+      const now = new Date();
+      return `Scanned Report ${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+    }
     switch (template) {
       case 'evergreen':
         return 'Evergreen Wellness Hospital Report';
@@ -150,15 +162,30 @@ export default function NameReportScreen() {
     }
   };
 
+  const getInitialText = () => {
+    if (capturedImageUri) {
+      return `[CAMERA CAPTURED MEDICAL REPORT]
+Image Size: High Resolution JPEG
+Gemini Multimodal OCR will read the text directly from the photo you just took!`;
+    }
+    return DEFAULT_TRANSCRIPTIONS[template || 'cbc'] || '';
+  };
+
   const suggestion = getSuggestion();
   const [name, setName] = useState('');
-  const [reportText, setReportText] = useState(DEFAULT_TRANSCRIPTIONS[template || 'cbc'] || '');
+  const [reportText, setReportText] = useState(getInitialText());
 
   const handleNext = () => {
-    // Navigate to process screen, passing the name, template and the custom OCR text
+    // Navigate to process screen, passing the name, template, the OCR text and the image base64
     router.push({
       pathname: '/scan-flow/process',
-      params: { name: name || suggestion, template, reportText }
+      params: { 
+        name: name || suggestion, 
+        template, 
+        reportText,
+        capturedImageBase64: capturedImageBase64 || '',
+        capturedImageUri: capturedImageUri || ''
+      }
     });
   };
 
@@ -175,6 +202,28 @@ export default function NameReportScreen() {
               Verify or edit the transcribed text before committing to analysis:
             </Text>
           </View>
+
+          {/* Captured Photo Preview Card */}
+          {capturedImageUri && (
+            <View style={[styles.previewCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <View style={styles.previewHeader}>
+                <Eye size={16} color={colors.primary} style={{ marginRight: 6 }} />
+                <Text style={[styles.previewTitle, { color: colors.textPrimary }]}>Captured Document Preview</Text>
+              </View>
+              
+              <View style={styles.previewBody}>
+                <View style={styles.imagePreviewContainer}>
+                  <Image source={{ uri: capturedImageUri }} style={styles.imageThumbnail} resizeMode="cover" />
+                  <View style={styles.imageDetails}>
+                    <Text style={[styles.imageName, { color: colors.textPrimary }]} numberOfLines={1}>
+                      {name || suggestion || 'captured_report.jpg'}
+                    </Text>
+                    <Text style={{ ...Typography.tiny, color: colors.textSecondary }}>Live Camera Photo</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          )}
 
           <View style={styles.form}>
             <Text style={[styles.fieldLabel, { color: colors.primary }]}>REPORT FILENAME</Text>
@@ -258,4 +307,44 @@ const styles = StyleSheet.create({
   },
   helpText: { ...Typography.tiny, marginTop: 8, fontStyle: 'italic', lineHeight: 15 },
   footer: { marginTop: 32 },
+
+  // Multimodal Preview Styles
+  previewCard: {
+    borderRadius: 16,
+    borderWidth: 1.5,
+    padding: 16,
+    marginTop: 20,
+  },
+  previewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  previewTitle: {
+    ...Typography.small,
+    fontFamily: 'DMSans_700Bold',
+  },
+  previewBody: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imagePreviewContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+  },
+  imageThumbnail: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    backgroundColor: '#000',
+  },
+  imageDetails: {
+    marginLeft: 16,
+    flex: 1,
+  },
+  imageName: {
+    ...Typography.body,
+    fontFamily: 'DMSans_700Bold',
+  },
 });

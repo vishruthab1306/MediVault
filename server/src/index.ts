@@ -1,6 +1,9 @@
+import dotenv from 'dotenv';
+// Load environment variables immediately before any other local imports
+dotenv.config();
+
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
 import profileRoutes from './routes/profile';
 import recordRoutes from './routes/records';
@@ -8,15 +11,13 @@ import vitalsRoutes from './routes/vitals';
 import timelineRoutes from './routes/timeline';
 import emergencyRoutes from './routes/emergency';
 
-// Load environment variables
-dotenv.config();
-
 const app = express();
 const PORT = process.env.PORT || 5001;
 
 // Global Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Request logging middleware
 app.use((req: Request, res: Response, next: NextFunction) => {

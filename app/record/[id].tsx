@@ -100,7 +100,7 @@ export default function RecordDetailScreen() {
         </View>
 
         {/* Collapsible Scanned Document Card */}
-        {record.fileUri && DOCUMENT_IMAGES[record.fileUri] && (
+        {record.fileUri && (DOCUMENT_IMAGES[record.fileUri] || record.fileUri.startsWith('file://') || record.fileUri.startsWith('content://') || record.fileUri.includes('/')) && (
           <View style={[styles.documentCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <TouchableOpacity 
               style={styles.documentHeader}
@@ -121,7 +121,11 @@ export default function RecordDetailScreen() {
             {isDocExpanded && (
               <View style={[styles.documentImageContainer, { borderTopColor: colors.border }]}>
                 <Image 
-                  source={DOCUMENT_IMAGES[record.fileUri]} 
+                  source={
+                    DOCUMENT_IMAGES[record.fileUri] 
+                      ? DOCUMENT_IMAGES[record.fileUri] 
+                      : { uri: record.fileUri }
+                  } 
                   style={styles.scannedImage}
                   resizeMode="contain"
                 />
@@ -134,7 +138,7 @@ export default function RecordDetailScreen() {
         {record.aiProcessed && (
           <View style={[styles.aiSummaryBlock, { backgroundColor: colors.dark }]}>
             <Text style={[styles.aiLabel, { color: colors.primary }]}>AI SUMMARY  🔒</Text>
-            <Text style={[styles.aiBody, { color: colors.textPrimary }]}>{record.aiSummary}</Text>
+            <Text style={[styles.aiBody, { color: colors.surface }]}>{record.aiSummary}</Text>
             <Text style={[styles.aiNotice, { color: colors.textSecondary, borderTopColor: colors.textSecondary }]}>This summary is AI-generated and cannot be edited</Text>
           </View>
         )}

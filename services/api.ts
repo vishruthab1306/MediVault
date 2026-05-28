@@ -88,6 +88,8 @@ export const api = {
     doctorNotes?: string;
     templateId?: string;
     reportText?: string;
+    imageBase64?: string;
+    customFileUri?: string;
   }) => {
     return request<any>('/api/records', {
       method: 'POST',

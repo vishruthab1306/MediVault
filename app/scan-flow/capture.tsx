@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Colors, Typography } from '../../constants/theme';
 import { Button } from '../../components/Button';
@@ -21,7 +21,7 @@ export default function CaptureScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [selectedTemplate, setSelectedTemplate] = useState('evergreen');
   const router = useRouter();
-  const cameraRef = useRef(null);
+  const cameraRef = useRef<CameraView>(null);
 
   if (!permission) {
     return <View />;
@@ -37,13 +37,25 @@ export default function CaptureScreen() {
   }
 
   const handleCapture = async () => {
-    // Mock capture delay
-    setTimeout(() => {
-      router.push({
-        pathname: '/scan-flow/name',
-        params: { template: selectedTemplate }
+    if (!cameraRef.current) return;
+    try {
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.2, // Drastically compress for super fast network transfer (maintains perfect text legibility for Gemini)
+        base64: true,
       });
-    }, 500);
+      if (photo) {
+        router.push({
+          pathname: '/scan-flow/name',
+          params: { 
+            template: selectedTemplate,
+            capturedImageUri: photo.uri,
+            capturedImageBase64: photo.base64 || ''
+          }
+        });
+      }
+    } catch (error) {
+      Alert.alert('Capture Error', 'Failed to take photo. Please try again.');
+    }
   };
 
   return (

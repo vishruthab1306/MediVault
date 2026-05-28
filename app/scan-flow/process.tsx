@@ -7,7 +7,13 @@ import { api } from '../../services/api';
 
 export default function ProcessScreen() {
   const router = useRouter();
-  const { name, template, reportText } = useLocalSearchParams<{ name: string; template: string; reportText: string }>();
+  const { name, template, reportText, capturedImageBase64, capturedImageUri } = useLocalSearchParams<{ 
+    name: string; 
+    template: string; 
+    reportText: string;
+    capturedImageBase64?: string;
+    capturedImageUri?: string;
+  }>();
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -30,12 +36,14 @@ export default function ProcessScreen() {
     // Make the real backend API call to process scanning & AI extraction
     const processScannedReport = async () => {
       try {
-        console.log(`[ProcessScreen] Sending report "${name}" (template: ${template}) with custom OCR text to backend AI engine...`);
+        console.log(`[ProcessScreen] Sending report "${name}" with captured image base64 data to backend AI engine...`);
         
         const newRecord = await api.createRecord({
           reportName: name || 'Scanned Medical Report',
           templateId: template || 'cbc',
           reportText: reportText || '',
+          imageBase64: capturedImageBase64 || '',
+          customFileUri: capturedImageUri || '',
         });
 
         console.log('[ProcessScreen] AI processing complete. Navigating to results page.');
