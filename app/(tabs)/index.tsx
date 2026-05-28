@@ -456,6 +456,8 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
     }
   };
 
+  const currentHour = new Date().getHours();
+  const greetingStr = currentHour < 12 ? 'Good morning' : currentHour < 17 ? 'Good afternoon' : 'Good evening';
   const latestBP = bloodPressureReadings[bloodPressureReadings.length - 1];
   const latestGlucose = glucoseReadings[glucoseReadings.length - 1];
 
@@ -463,8 +465,8 @@ Decryption Handshake QR Code enabled inside app for authorized clinical paramedi
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.primaryPale }]}>
       <View style={[styles.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.greeting, { color: colors.textPrimary }]}>Good morning, {profile?.name?.split(' ')[0] || 'User'}</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Here's your health summary</Text>
+          <Text style={[styles.greeting, { color: theme === 'light' ? colors.primaryMuted : colors.textPrimary }]}>{greetingStr}, {profile?.name?.split(' ')[0] || 'User'}</Text>
+          <Text style={[styles.subtitle, { color: colors.primarySoft }]}>Here's your health summary</Text>
         </View>
         <TouchableOpacity 
           onPress={toggleTheme} 
