@@ -138,8 +138,8 @@ export default function RecordDetailScreen() {
         {record.aiProcessed && (
           <View style={[styles.aiSummaryBlock, { backgroundColor: colors.dark }]}>
             <Text style={[styles.aiLabel, { color: colors.primary }]}>AI SUMMARY  🔒</Text>
-            <Text style={[styles.aiBody, { color: colors.surface }]}>{record.aiSummary}</Text>
-            <Text style={[styles.aiNotice, { color: colors.textSecondary, borderTopColor: colors.textSecondary }]}>This summary is AI-generated and cannot be edited</Text>
+            <Text style={[styles.aiBody, { color: '#FFFFFF' }]}>{record.aiSummary}</Text>
+            <Text style={[styles.aiNotice, { color: 'rgba(255, 255, 255, 0.6)', borderTopColor: 'rgba(255, 255, 255, 0.15)' }]}>This summary is AI-generated and cannot be edited</Text>
           </View>
         )}
 
